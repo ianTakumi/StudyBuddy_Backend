@@ -3,61 +3,79 @@ import { supabase } from "../configs/supabase.js";
 
 export const register = async (req, res) => {
   try {
-    const { email, password, fname, lname, user_type } = req.body;
+    const { firstName, lastName, phone, email, password, role } = req.body;
+    console.log("📝 Registration attempt:", { email, firstName, lastName });
 
     // Validate required fields
-    if (!email || !password || !fname || !lname) {
+    if (!email || !password || !firstName || !lastName) {
       return res.status(400).json({
         error: "Email, password, first name, and last name are required",
       });
     }
 
+    // Sign up user WITHOUT email confirmation
     const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
+      email: email.trim(),
+      password: password.trim(),
       options: {
         data: {
-          fname,
-          lname,
-          user_type: user_type || "student",
+          first_name: firstName,
+          last_name: lastName,
+          phone: phone || "",
+          role: role || "student",
         },
+        // ⬇️ ITO ANG IMPORTANTE - disable email confirmation
+        emailConfirm: false,
       },
     });
 
-    if (error) throw error;
+    if (error) {
+      console.error("❌ Supabase error:", error);
+      return res.status(400).json({
+        error: error.message,
+      });
+    }
 
     if (data.user) {
+      console.log("✅ User created:", data.user.id);
+
       // Create user profile
-      const { error: profileError } = await supabase.from("profiles").insert([
+      const { error: profileError } = await supabase.from("users").insert([
         {
           id: data.user.id,
           email: data.user.email,
-          fname,
-          lname,
-          user_type: user_type || "student",
+          first_name: firstName,
+          last_name: lastName,
+          phone: phone || "",
+          role: role || "student",
           created_at: new Date(),
         },
       ]);
 
       if (profileError) {
         console.error("Profile creation error:", profileError);
-        // Continue even if profile creation fails, as user is already created in auth
+        // Continue anyway - user is created in auth
       }
-    }
 
-    res.status(201).json({
-      message: "User registered successfully",
-      user: {
-        id: data.user.id,
-        email: data.user.email,
-        fname,
-        lname,
-        user_type: user_type || "student",
-      },
-    });
+      return res.status(201).json({
+        success: true,
+        message: "User registered successfully",
+        user: {
+          id: data.user.id,
+          email: data.user.email,
+          first_name: firstName,
+          last_name: lastName,
+          role: role || "student",
+        },
+        // Include session if auto-login is needed
+        session: data.session,
+      });
+    }
   } catch (error) {
     console.error("Registration error:", error);
-    res.status(400).json({ error: error.message });
+    res.status(500).json({
+      error: "Internal server error",
+    });
   }
 };
 
@@ -80,7 +98,7 @@ export const login = async (req, res) => {
 
     // Get user profile
     const { data: profile, error: profileError } = await supabase
-      .from("profiles")
+      .from("users")
       .select("*")
       .eq("id", data.user.id)
       .single();
@@ -92,9 +110,12 @@ export const login = async (req, res) => {
       user: {
         id: data.user.id,
         email: data.user.email,
-        fname: profile?.fname,
-        lname: profile?.lname,
-        user_type: profile?.user_type,
+        first_name: profile?.first_name,
+        last_name: profile?.last_name,
+        phone: profile?.phone,
+        created_at: profile?.created_at,
+        updated_at: profile?.updated_at,
+        role: profile?.role,
       },
     });
   } catch (error) {

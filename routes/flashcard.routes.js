@@ -1,16 +1,27 @@
-// routes/flashcardRoutes.js
 import express from "express";
 import {
-  createFlashcardSet,
   getFlashcardSets,
-  studyFlashcards,
+  getFlashcardSetById,
+  createFlashcardSet,
+  updateFlashcardSet,
+  deleteFlashcardSet,
+  createFlashcard,
+  updateFlashcard,
+  deleteFlashcard,
 } from "../controllers/flashcard.controller.js";
-// import { authenticateUser } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
+// Flashcard Sets Routes
+router.get("/sets/:userId", getFlashcardSets);
+router.get("/sets/single/:id", getFlashcardSetById);
 router.post("/sets", createFlashcardSet);
-router.get("/sets", getFlashcardSets);
-router.post("/study", studyFlashcards);
+router.put("/sets/:id", updateFlashcardSet);
+router.delete("/sets/:id", deleteFlashcardSet);
+
+// Flashcards Routes
+router.post("/cards", createFlashcard);
+router.put("/cards/:id", updateFlashcard);
+router.delete("/cards/:id", deleteFlashcard);
 
 export default router;
