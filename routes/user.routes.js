@@ -10,7 +10,7 @@ import {
 const router = express.Router();
 
 // Update user profile
-router.put("/profile", updateProfile);
+router.put("/profile/:userId", updateProfile);
 
 // Get user statistics
 router.get("/stats", getUserStats);

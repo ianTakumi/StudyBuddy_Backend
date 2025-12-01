@@ -200,23 +200,79 @@ export const forgotPassword = async (req, res) => {
   }
 };
 
-export const resetPassword = async (req, res) => {
+export const updatePassword = async (req, res) => {
   try {
-    const { password } = req.body;
+    const { currentPassword, newPassword } = req.body;
+    const { userId } = req.params;
 
-    if (!password) {
-      return res.status(400).json({ error: "Password is required" });
+    // Validate required fields
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        error: "Current password and new password are required",
+      });
     }
 
-    const { error } = await supabase.auth.updateUser({
-      password: password,
+    // Validate password length
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        error: "New password must be at least 6 characters long",
+      });
+    }
+
+    const { data: userData, error: userError } = await supabase
+      .from("users")
+      .select("email")
+      .eq("id", userId)
+      .single();
+
+    if (userError || !userData) {
+      console.error("❌ User not found in database:", userError);
+      return res.status(404).json({
+        error: "User not found",
+      });
+    }
+
+    const userEmail = userData.email;
+
+    // Step 2: Reauthenticate user with current password
+    console.log("🔑 Verifying current password...");
+    const { data: authData, error: authError } =
+      await supabase.auth.signInWithPassword({
+        email: userEmail,
+        password: currentPassword,
+      });
+
+    if (authError) {
+      console.error("❌ Current password verification failed:", authError);
+      return res.status(401).json({
+        error: "Current password is incorrect",
+      });
+    }
+
+    // Step 3: Update password directly
+    console.log("🔄 Updating password...");
+    const { data: updateData, error: updateError } =
+      await supabase.auth.updateUser({
+        password: newPassword,
+      });
+
+    if (updateError) {
+      console.error("❌ Password update failed:", updateError);
+      return res.status(400).json({
+        error: "Failed to update password. Please try again.",
+      });
+    }
+
+    console.log("✅ Password updated successfully for user:", userId);
+
+    res.json({
+      success: true,
+      message: "Password updated successfully!",
     });
-
-    if (error) throw error;
-
-    res.json({ message: "Password updated successfully" });
   } catch (error) {
-    console.error("Reset password error:", error);
-    res.status(500).json({ error: error.message });
+    console.error("💥 Update password error:", error);
+    res.status(500).json({
+      error: "Internal server error during password update",
+    });
   }
 };

@@ -12,6 +12,8 @@ import userRoutes from "./routes/user.routes.js";
 import classRoutes from "./routes/class.routes.js";
 import studySession from "./routes/study-session.routes.js";
 import quizTakingRoutes from "./routes/quizTaking.routes.js";
+import goalRoutes from "./routes/goal.routes.js";
+import contactRoutes from "./routes/contact.routes.js";
 
 const app = express();
 
@@ -50,6 +52,8 @@ app.use("/api/users", userRoutes);
 app.use("/api/classes", classRoutes);
 app.use("/api/study-sessions", studySession);
 app.use("/api/quiz-taking", quizTakingRoutes);
+app.use("/api/goals", goalRoutes);
+app.use("/api/contacts", contactRoutes);
 
 // 404 handler
 app.use((req, res) => {
@@ -78,6 +82,4 @@ app.listen(PORT, "0.0.0.0", () => {
   );
   console.log(`   Local: http://localhost:${PORT}`);
   console.log(`   Network: http://[YOUR_COMPUTER_IP]:${PORT}`);
-  console.log(`📊 Environment: ${process.env.NODE_ENV || "development"}`);
-  console.log(`⚠️  CORS: Allowing ALL origins for testing`);
 });

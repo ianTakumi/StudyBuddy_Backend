@@ -3,38 +3,102 @@ import { supabase } from "../configs/supabase.js";
 
 export const updateProfile = async (req, res) => {
   try {
-    const { fname, lname, avatar_url, study_preferences, bio } = req.body;
+    const { first_name, last_name, email, phone } = req.body;
+    const { userId } = req.params;
+
+    console.log("🔄 Updating profile for user:", userId);
 
     // Validate required fields
-    if (!fname || !lname) {
+    if (!first_name || !last_name || !email || !phone) {
       return res.status(400).json({
-        error: "First name and last name are required",
+        error: "Fill up all the fields",
       });
     }
 
-    const { data, error } = await supabase
-      .from("profiles")
+    // Step 1: Check if email is changing
+    const { data: currentUser, error: currentError } = await supabase
+      .from("users")
+      .select("email")
+      .eq("id", userId)
+      .single();
+
+    if (currentError) {
+      console.error("❌ Error fetching current user:", currentError);
+      return res.status(400).json({
+        error: "Failed to fetch current user data",
+      });
+    }
+
+    const emailChanged = currentUser.email !== email;
+
+    // Step 2: Update users table (INCLUDING email)
+    console.log("💾 Updating users table...");
+    const { data: userData, error: userError } = await supabase
+      .from("users")
       .update({
-        fname,
-        lname,
-        avatar_url,
-        study_preferences,
-        bio,
+        first_name,
+        last_name,
+        email, // Update email in users table
+        phone,
         updated_at: new Date(),
       })
-      .eq("id", req.user.id)
+      .eq("id", userId)
       .select()
       .single();
 
-    if (error) throw error;
+    if (userError) {
+      console.error("❌ Users table update error:", userError);
+      return res.status(400).json({
+        error: "Failed to update database: " + userError.message,
+      });
+    }
 
-    res.json({
-      message: "Profile updated successfully",
-      user: data,
-    });
+    console.log("✅ Users table updated successfully");
+
+    // Step 3: Update Auth metadata (store new email in metadata)
+    console.log("🔐 Updating Auth metadata...");
+    const { data: authData, error: authError } =
+      await supabase.auth.admin.updateUserById(userId, {
+        user_metadata: {
+          first_name: first_name,
+          last_name: last_name,
+          phone: phone,
+          email: email, // Store new email in metadata
+          previous_email: currentUser.email, // Store old email for reference
+        },
+      });
+
+    if (authError) {
+      console.error("❌ Auth metadata update error:", authError);
+      console.log(
+        "⚠️ Auth metadata update failed, but users table was updated"
+      );
+    } else {
+      console.log("✅ Auth metadata updated successfully");
+    }
+
+    console.log("✅ Profile updated successfully for user:", userId);
+
+    // Return appropriate response
+    const response = {
+      success: true,
+      message: "Profile updated successfully!",
+      user: userData,
+    };
+
+    if (emailChanged) {
+      response.note =
+        "Email updated in database. For authentication, please continue using your original email address to login, or contact support to change your authentication email.";
+      response.original_email = currentUser.email;
+      response.new_email = email;
+    }
+
+    res.json(response);
   } catch (error) {
-    console.error("Update profile error:", error);
-    res.status(500).json({ error: error.message });
+    console.error("💥 Update profile error:", error);
+    res.status(500).json({
+      error: "Internal server error during profile update",
+    });
   }
 };
 
