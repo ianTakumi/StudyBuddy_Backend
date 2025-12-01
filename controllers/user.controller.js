@@ -1,5 +1,27 @@
-// controllers/userController.js
 import { supabase } from "../configs/supabase.js";
+
+// Get all users
+export const getUsers = async (req, res) => {
+  try {
+    const { data: users, error } = await supabase.from("users").select("*");
+
+    if (error) {
+      throw error;
+    }
+
+    res.status(200).json({
+      success: true,
+      data: users,
+      count: users.length,
+    });
+  } catch (error) {
+    console.error("Get users error:", error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+};
 
 export const updateProfile = async (req, res) => {
   try {

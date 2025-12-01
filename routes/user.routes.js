@@ -4,10 +4,14 @@ import {
   updateProfile,
   getUserStats,
   getDashboard,
+  getUsers,
 } from "../controllers/user.controller.js";
 // import { authenticateUser } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
+
+// Get all users
+router.get("/", getUsers);
 
 // Update user profile
 router.put("/profile/:userId", updateProfile);
