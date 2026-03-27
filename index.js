@@ -14,6 +14,7 @@ import studySession from "./routes/study-session.routes.js";
 import quizTakingRoutes from "./routes/quizTaking.routes.js";
 import goalRoutes from "./routes/goal.routes.js";
 import contactRoutes from "./routes/contact.routes.js";
+import flashcardClassRoutes from "./routes/flashcard_class.routes.js";
 
 const app = express();
 
@@ -25,7 +26,7 @@ app.use(
   cors({
     origin: "*", // Allow all origins temporarily
     credentials: true,
-  })
+  }),
 );
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -54,6 +55,7 @@ app.use("/api/study-sessions", studySession);
 app.use("/api/quiz-taking", quizTakingRoutes);
 app.use("/api/goals", goalRoutes);
 app.use("/api/contacts", contactRoutes);
+app.use("/api/flashcards-class", flashcardClassRoutes);
 
 // 404 handler
 app.use((req, res) => {
@@ -68,6 +70,7 @@ app.use((req, res) => {
       "/api/quizzes",
       "/api/resources",
       "/api/users",
+      "/api/flashcards-class",
     ],
   });
 });
@@ -78,7 +81,7 @@ const PORT = process.env.PORT || 5000;
 // Start server - LISTEN ON ALL NETWORK INTERFACES
 app.listen(PORT, "0.0.0.0", () => {
   console.log(
-    `🚀 Server is running and accessible from ANY device on your network`
+    `🚀 Server is running and accessible from ANY device on your network`,
   );
   console.log(`   Local: http://localhost:${PORT}`);
   console.log(`   Network: http://[YOUR_COMPUTER_IP]:${PORT}`);

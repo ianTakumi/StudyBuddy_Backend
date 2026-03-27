@@ -1,5 +1,34 @@
 import { supabase } from "../configs/supabase.js";
 
+// Get all study sessions for admin dashboard
+export const getAllStudySessions = async (req, res) => {
+  try {
+    const { data: sessions, error } = await supabase
+      .from("study_sessions")
+      .select("*")
+      .order("date", { ascending: true })
+      .order("time", { ascending: true });
+
+    if (error) {
+      return res.status(500).json({
+        success: false,
+        message: "Failed to fetch study sessions",
+      });
+    }
+
+    res.json({
+      success: true,
+      data: sessions,
+      count: sessions.length,
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
 // Get all study sessions for a user
 export const getStudySessions = async (req, res) => {
   try {

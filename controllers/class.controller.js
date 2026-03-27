@@ -27,6 +27,32 @@ const generateClassCode = async () => {
   return code;
 };
 
+export const getAllClasses = async (req, res) => {
+  try {
+    const { data: classes, error } = await supabase
+      .from("classes")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      return res.status(500).json({
+        success: false,
+        message: "Failed to fetch classes",
+      });
+    }
+
+    res.json({
+      success: true,
+      data: classes,
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
 // Get all classes for a teacher
 export const getClasses = async (req, res) => {
   try {
@@ -38,7 +64,7 @@ export const getClasses = async (req, res) => {
         `
         *,
         class_students(count)
-      `
+      `,
       )
       .eq("teacher_id", teacherId)
       .order("created_at", { ascending: false });
@@ -79,7 +105,7 @@ export const getClassById = async (req, res) => {
         `
         *,
         class_students(count)
-      `
+      `,
       )
       .eq("id", id)
       .eq("teacher_id", teacherId)
@@ -544,7 +570,7 @@ export const getStudentClasses = async (req, res) => {
     const { data: classes, error: classesError } = await supabase
       .from("classes")
       .select(
-        "id, name, subject, grade_level, class_code, schedule, room, description, teacher_id, created_at"
+        "id, name, subject, grade_level, class_code, schedule, room, description, teacher_id, created_at",
       )
       .in("id", classIds);
 

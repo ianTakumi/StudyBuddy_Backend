@@ -1,4 +1,3 @@
-// controllers/authController.js
 import { supabase } from "../configs/supabase.js";
 
 export const register = async (req, res) => {
@@ -13,7 +12,7 @@ export const register = async (req, res) => {
       });
     }
 
-    // Sign up user WITHOUT email confirmation
+    // Sign up user
     const { data, error } = await supabase.auth.signUp({
       email: email.trim(),
       password: password.trim(),
@@ -24,7 +23,6 @@ export const register = async (req, res) => {
           phone: phone || "",
           role: role || "student",
         },
-        // ⬇️ ITO ANG IMPORTANTE - disable email confirmation
         emailConfirm: false,
       },
     });

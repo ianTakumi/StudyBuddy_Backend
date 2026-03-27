@@ -1,5 +1,27 @@
 import { supabase } from "../configs/supabase.js";
 
+// Get all goals\
+export const getAllGoals = async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from("study_goals")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+
+    res.json({
+      success: true,
+      goals: data || [],
+    });
+  } catch (error) {
+    console.error("Get all goals error:", error);
+    res.status(500).json({
+      error: "Failed to fetch goals",
+    });
+  }
+};
+
 // Get all goals for a user
 export const getGoals = async (req, res) => {
   try {

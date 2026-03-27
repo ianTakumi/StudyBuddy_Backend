@@ -1,5 +1,6 @@
 import express from "express";
 import {
+  getAllClasses,
   getClasses,
   getClassById,
   createClass,
@@ -14,6 +15,9 @@ import {
 } from "../controllers/class.controller.js";
 
 const router = express.Router();
+
+// GET /api/classes - Get all classes for admin dashboard
+router.get("/", getAllClasses);
 
 router.get("/:studentId/:classId/classmates", getClassStudentsForStudent);
 

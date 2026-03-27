@@ -5,9 +5,13 @@ import {
   createStudySession,
   updateStudySession,
   deleteStudySession,
+  getAllStudySessions,
 } from "../controllers/study-session.controller.js";
 
 const router = express.Router();
+
+// GET /api/study-sessions - Get all study sessions
+router.get("/", getAllStudySessions);
 
 // GET /api/study-sessions/:userId - Get all study sessions for user
 router.get("/:userId", getStudySessions);

@@ -8,11 +8,14 @@ import {
   createFlashcard,
   updateFlashcard,
   deleteFlashcard,
+  getAllFlashcardSets,
 } from "../controllers/flashcard.controller.js";
 
 const router = express.Router();
 
 // Flashcard Sets Routes
+// Get all flashcard sets for admin dashboard
+router.get("/", getAllFlashcardSets);
 router.get("/sets/:userId", getFlashcardSets);
 router.get("/sets/single/:id", getFlashcardSetById);
 router.post("/sets", createFlashcardSet);

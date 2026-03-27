@@ -1,5 +1,6 @@
 import express from "express";
 import {
+  getAllGoals,
   getGoals,
   createGoal,
   updateGoal,
@@ -11,6 +12,7 @@ import {
 const router = express.Router();
 
 // All routes are protected and user-specific
+router.get("/", getAllGoals);
 router.get("/:userId", getGoals);
 router.post("/:userId", createGoal);
 router.put("/:goalId", updateGoal);
