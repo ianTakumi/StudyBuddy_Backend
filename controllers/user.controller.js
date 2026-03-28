@@ -93,7 +93,7 @@ export const updateProfile = async (req, res) => {
     if (authError) {
       console.error("❌ Auth metadata update error:", authError);
       console.log(
-        "⚠️ Auth metadata update failed, but users table was updated"
+        "⚠️ Auth metadata update failed, but users table was updated",
       );
     } else {
       console.log("✅ Auth metadata updated successfully");
@@ -121,6 +121,48 @@ export const updateProfile = async (req, res) => {
     res.status(500).json({
       error: "Internal server error during profile update",
     });
+  }
+};
+
+export const deleteUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // Step 1: Delete user from Auth
+    console.log("🔐 Deleting user from Auth...");
+    const { error: authError } = await supabase.auth.admin.deleteUser(userId);
+
+    if (authError) {
+      console.error("❌ Auth deletion error:", authError);
+      return res.status(400).json({
+        error: "Failed to delete user from authentication system",
+      });
+    }
+
+    // Step 2: Delete user from users table
+    console.log("💾 Deleting user from users table...");
+    const { error: userError } = await supabase
+      .from("users")
+      .delete()
+      .eq("id", userId);
+
+    if (userError) {
+      console.error("❌ Users table deletion error:", userError);
+      return res.status(400).json({
+        error: "Failed to delete user from database",
+      });
+    }
+
+    console.log("✅ User deleted successfully:", userId);
+    res.json({
+      success: true,
+      message: "User deleted successfully",
+    });
+  } catch (err) {
+    console.error("Delete user error:", err);
+    res
+      .status(500)
+      .json({ error: "Internal server error during user deletion" });
   }
 };
 
@@ -154,7 +196,7 @@ export const getUserStats = async (req, res) => {
 
     const totalStudyTime = studyTime.reduce(
       (total, session) => total + (session.duration_minutes || 0),
-      0
+      0,
     );
 
     // Get flashcard sets count

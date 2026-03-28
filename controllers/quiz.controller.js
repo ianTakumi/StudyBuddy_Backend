@@ -1,12 +1,245 @@
 import { supabase } from "../configs/supabase.js";
 
+// Get average score for all quizzes in a class
+export const getClassAverageScore = async (req, res) => {
+  try {
+    const { classId } = req.params;
+
+    if (!classId) {
+      return res.status(400).json({
+        success: false,
+        message: "Class ID is required",
+      });
+    }
+
+    // First, get all quizzes for this class
+    const { data: quizzes, error: quizzesError } = await supabase
+      .from("quizzes")
+      .select("id, total_points")
+      .eq("class_id", classId);
+
+    if (quizzesError) throw quizzesError;
+
+    if (!quizzes || quizzes.length === 0) {
+      return res.json({
+        success: true,
+        data: {
+          average_score: 0,
+          total_quizzes: 0,
+          total_submissions: 0,
+        },
+      });
+    }
+
+    const quizIds = quizzes.map((quiz) => quiz.id);
+
+    // Get all submissions for these quizzes
+    const { data: submissions, error: submissionsError } = await supabase
+      .from("quiz_submissions")
+      .select("score, total_points, quiz_id")
+      .in("quiz_id", quizIds);
+
+    if (submissionsError) throw submissionsError;
+
+    if (!submissions || submissions.length === 0) {
+      return res.json({
+        success: true,
+        data: {
+          average_score: 0,
+          total_quizzes: quizzes.length,
+          total_submissions: 0,
+        },
+      });
+    }
+
+    // Calculate average score percentage across all submissions
+    let totalPercentage = 0;
+    let validSubmissions = 0;
+
+    submissions.forEach((submission) => {
+      if (submission.total_points > 0) {
+        const percentage = (submission.score / submission.total_points) * 100;
+        totalPercentage += percentage;
+        validSubmissions++;
+      }
+    });
+
+    const averageScore =
+      validSubmissions > 0 ? totalPercentage / validSubmissions : 0;
+
+    res.json({
+      success: true,
+      data: {
+        average_score: Math.round(averageScore * 100) / 100, // Round to 2 decimal places
+        total_quizzes: quizzes.length,
+        total_submissions: submissions.length,
+        total_students_submitted: new Set(submissions.map((s) => s.user_id))
+          .size,
+      },
+    });
+  } catch (error) {
+    console.error("Get class average score error:", error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+};
+
+// Alternative: Get average score for a specific quiz
+export const getQuizAverageScore = async (req, res) => {
+  try {
+    const { quizId } = req.params;
+
+    if (!quizId) {
+      return res.status(400).json({
+        success: false,
+        message: "Quiz ID is required",
+      });
+    }
+
+    // Get all submissions for this quiz
+    const { data: submissions, error: submissionsError } = await supabase
+      .from("quiz_submissions")
+      .select("score, total_points")
+      .eq("quiz_id", quizId);
+
+    if (submissionsError) throw submissionsError;
+
+    if (!submissions || submissions.length === 0) {
+      return res.json({
+        success: true,
+        data: {
+          average_score: 0,
+          total_submissions: 0,
+        },
+      });
+    }
+
+    // Calculate average score percentage
+    let totalPercentage = 0;
+    let validSubmissions = 0;
+
+    submissions.forEach((submission) => {
+      if (submission.total_points > 0) {
+        const percentage = (submission.score / submission.total_points) * 100;
+        totalPercentage += percentage;
+        validSubmissions++;
+      }
+    });
+
+    const averageScore =
+      validSubmissions > 0 ? totalPercentage / validSubmissions : 0;
+
+    res.json({
+      success: true,
+      data: {
+        average_score: Math.round(averageScore * 100) / 100,
+        total_submissions: submissions.length,
+      },
+    });
+  } catch (error) {
+    console.error("Get quiz average score error:", error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+};
+
+export const getClassQuizCount = async (req, res) => {
+  try {
+    const { classId } = req.params;
+
+    if (!classId) {
+      return res.status(400).json({
+        success: false,
+        message: "Class ID is required",
+      });
+    }
+
+    // Count all quizzes for this class
+    const { count, error } = await supabase
+      .from("quizzes")
+      .select("*", { count: "exact", head: true })
+      .eq("class_id", classId);
+
+    if (error) throw error;
+
+    res.json({
+      success: true,
+      data: {
+        total_quizzes: count || 0,
+      },
+    });
+  } catch (error) {
+    console.error("Get class quiz count error:", error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+};
+
+export const getTeacherQuizCount = async (req, res) => {
+  try {
+    const { teacherId } = req.params;
+
+    if (!teacherId) {
+      return res.status(400).json({
+        success: false,
+        message: "Teacher ID is required",
+      });
+    }
+
+    // Get all classes created by this teacher
+    const { data: classes, error: classesError } = await supabase
+      .from("classes")
+      .select("id")
+      .eq("teacher_id", teacherId);
+
+    if (classesError) throw classesError;
+
+    if (!classes || classes.length === 0) {
+      return res.json({
+        success: true,
+        data: {
+          total_quizzes: 0,
+        },
+      });
+    }
+
+    const classIds = classes.map((cls) => cls.id);
+
+    // Get all quizzes from those classes
+    const { data: quizzes, error: quizzesError } = await supabase
+      .from("quizzes")
+      .select("id")
+      .in("class_id", classIds);
+
+    if (quizzesError) throw quizzesError;
+
+    res.json({
+      success: true,
+      data: {
+        total_quizzes: quizzes?.length || 0,
+      },
+    });
+  } catch (error) {
+    console.error("Get teacher quiz count error:", error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+};
+
 export const createQuiz = async (req, res) => {
   try {
     const {
       title,
       description,
       due_date,
-      time_limit,
       total_points,
       question_count,
       quiz_type,
@@ -17,7 +250,7 @@ export const createQuiz = async (req, res) => {
     console.log("📥 Received quiz data:", JSON.stringify(req.body, null, 2));
 
     // Validate required fields
-    if (!class_id || !title || !due_date || !time_limit || !total_points) {
+    if (!class_id || !title || !due_date || !total_points) {
       console.log("❌ Missing required fields");
       return res.status(400).json({
         success: false,
@@ -33,7 +266,6 @@ export const createQuiz = async (req, res) => {
           title,
           description: description || "",
           due_date: new Date(due_date),
-          time_limit: parseInt(time_limit),
           total_points: parseInt(total_points),
           question_count: parseInt(question_count) || questions.length,
           quiz_type: quiz_type || "multiple_choice",
@@ -106,7 +338,7 @@ export const createQuiz = async (req, res) => {
 
       console.log(
         "📝 Processed questions:",
-        JSON.stringify(questionsWithQuizId, null, 2)
+        JSON.stringify(questionsWithQuizId, null, 2),
       );
 
       const { error: questionsError } = await supabase
@@ -123,7 +355,7 @@ export const createQuiz = async (req, res) => {
         `
         *,
         quiz_questions (*)
-      `
+      `,
       )
       .eq("id", quizData.id)
       .single();
@@ -151,7 +383,6 @@ export const updateQuiz = async (req, res) => {
       title,
       description,
       due_date,
-      time_limit,
       total_points,
       question_count,
       quiz_type,
@@ -159,7 +390,7 @@ export const updateQuiz = async (req, res) => {
     } = req.body;
 
     // Validate required fields
-    if (!title || !due_date || !time_limit || !total_points) {
+    if (!title || !due_date || !total_points) {
       return res.status(400).json({
         success: false,
         message: "Missing required fields",
@@ -188,7 +419,6 @@ export const updateQuiz = async (req, res) => {
         title,
         description: description || "",
         due_date: new Date(due_date),
-        time_limit: parseInt(time_limit),
         total_points: parseInt(total_points),
         question_count: parseInt(question_count) || questions.length,
         quiz_type: quiz_type || "multiple_choice",
@@ -276,7 +506,7 @@ export const updateQuiz = async (req, res) => {
         `
         *,
         quiz_questions (*)
-      `
+      `,
       )
       .eq("id", quizId)
       .single();
@@ -399,7 +629,7 @@ export const getQuizzesByClass = async (req, res) => {
         `
         *,
         quiz_questions (*)
-      `
+      `,
       )
       .eq("class_id", classId)
       .order("created_at", { ascending: false });
@@ -429,7 +659,7 @@ export const getQuizById = async (req, res) => {
         `
         *,
         quiz_questions (*)
-      `
+      `,
       )
       .eq("id", quizId)
       .eq("class_id", classId)
@@ -511,7 +741,7 @@ export const getQuizSubmissions = async (req, res) => {
           last_name,
           email
         )
-      `
+      `,
       )
       .eq("quiz_id", quizId)
       .order("submitted_at", { ascending: false });
@@ -594,7 +824,7 @@ export const getQuizzesByTeacher = async (req, res) => {
           name,
           subject
         )
-      `
+      `,
       )
       .in("class_id", classIds)
       .order("created_at", { ascending: false });
@@ -702,7 +932,7 @@ export const submitQuiz = async (req, res) => {
     let totalPossiblePoints = 0;
     const gradedAnswers = answers.map((submittedAnswer) => {
       const question = questions.find(
-        (q) => q.id === submittedAnswer.questionId
+        (q) => q.id === submittedAnswer.questionId,
       );
       if (!question) {
         return {

@@ -9,9 +9,23 @@ import {
   getQuizQuestions,
   updateQuestion,
   getQuizzesByTeacher,
+  getTeacherQuizCount,
+  getClassQuizCount,
+  getClassAverageScore,
+  getQuizAverageScore,
 } from "../controllers/quiz.controller.js";
 
 const router = express.Router();
+
+router.get("/class/:classId/average", getClassAverageScore);
+
+router.get("/quiz/:quizId/average", getQuizAverageScore);
+
+// Get total quizzes created by a teacher
+router.get("/teacher/:teacherId/count", getTeacherQuizCount);
+
+// Get total quizzes for a class
+router.get("/class/:classId/count", getClassQuizCount);
 
 // Class-specific quiz routes
 router.post("/:classId", createQuiz);

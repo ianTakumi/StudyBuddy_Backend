@@ -1,5 +1,189 @@
 import { supabase } from "../configs/supabase.js";
 
+// Count flashcard sets created by a teacher across all their classes
+export const countTeacherFlashcardSets = async (req, res) => {
+  try {
+    const { teacherId } = req.params;
+
+    if (!teacherId) {
+      return res.status(400).json({
+        success: false,
+        message: "Teacher ID is required",
+      });
+    }
+
+    // First, get all classes created by this teacher
+    const { data: classes, error: classesError } = await supabase
+      .from("classes")
+      .select("id")
+      .eq("teacher_id", teacherId);
+
+    if (classesError) {
+      return res.status(500).json({
+        success: false,
+        message: "Failed to fetch teacher's classes",
+        error: classesError.message,
+      });
+    }
+
+    if (!classes || classes.length === 0) {
+      return res.json({
+        success: true,
+        data: {
+          total_flashcard_sets: 0,
+        },
+      });
+    }
+
+    const classIds = classes.map((cls) => cls.id);
+
+    // Count all flashcard sets belonging to these classes
+    const { count, error: countError } = await supabase
+      .from("flashcard_sets_class")
+      .select("*", { count: "exact", head: true })
+      .in("class_id", classIds);
+
+    if (countError) {
+      return res.status(500).json({
+        success: false,
+        message: "Failed to count flashcard sets",
+        error: countError.message,
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        total_flashcard_sets: count || 0,
+      },
+    });
+  } catch (error) {
+    console.error("Error counting teacher flashcard sets:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+// Get flashcard set count for a specific class
+export const getClassFlashcardSetCount = async (req, res) => {
+  try {
+    const { classId } = req.params;
+
+    if (!classId) {
+      return res.status(400).json({
+        success: false,
+        message: "Class ID is required",
+      });
+    }
+
+    // Count all flashcard sets for this class
+    const { count, error } = await supabase
+      .from("flashcard_sets_class")
+      .select("*", { count: "exact", head: true })
+      .eq("class_id", classId);
+
+    if (error) {
+      return res.status(500).json({
+        success: false,
+        message: "Failed to count flashcard sets",
+        error: error.message,
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        total_flashcard_sets: count || 0,
+      },
+    });
+  } catch (error) {
+    console.error("Error counting class flashcard sets:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+export const getTeacherFlashcardSets = async (req, res) => {
+  try {
+    const { teacherId } = req.params;
+
+    if (!teacherId) {
+      return res.status(400).json({
+        success: false,
+        message: "Teacher ID is required",
+      });
+    }
+
+    // First, get all classes created by this teacher
+    const { data: classes, error: classesError } = await supabase
+      .from("classes")
+      .select("id, name")
+      .eq("teacher_id", teacherId);
+
+    if (classesError) {
+      return res.status(500).json({
+        success: false,
+        message: "Failed to fetch teacher's classes",
+        error: classesError.message,
+      });
+    }
+
+    if (!classes || classes.length === 0) {
+      return res.json({
+        success: true,
+        data: [],
+      });
+    }
+
+    const classIds = classes.map((cls) => cls.id);
+
+    // Get all flashcard sets belonging to these classes with their flashcards count
+    const { data: flashcardSets, error: setsError } = await supabase
+      .from("flashcard_sets_class")
+      .select(
+        `
+        *,
+        flashcards_class (count)
+      `,
+      )
+      .in("class_id", classIds)
+      .order("created_at", { ascending: false });
+
+    if (setsError) {
+      return res.status(500).json({
+        success: false,
+        message: "Failed to fetch flashcard sets",
+        error: setsError.message,
+      });
+    }
+
+    // Format the response to include class name and flashcard count
+    const formattedSets = flashcardSets.map((set) => {
+      const classInfo = classes.find((c) => c.id === set.class_id);
+      return {
+        ...set,
+        class_name: classInfo ? classInfo.name : null,
+        flashcard_count: set.flashcards_class?.length || 0,
+      };
+    });
+
+    res.json({
+      success: true,
+      data: formattedSets,
+    });
+  } catch (error) {
+    console.error("Error fetching teacher flashcard sets:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
 // Get all flashcard sets for a class for admin dashboard
 export const getAllFlashcardSetsForClass = async (req, res) => {
   try {

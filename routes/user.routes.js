@@ -5,6 +5,7 @@ import {
   getUserStats,
   getDashboard,
   getUsers,
+  deleteUser,
 } from "../controllers/user.controller.js";
 // import { authenticateUser } from "../middleware/authMiddleware.js";
 
@@ -15,6 +16,9 @@ router.get("/", getUsers);
 
 // Update user profile
 router.put("/profile/:userId", updateProfile);
+
+// Delete user
+router.delete("/:userId", deleteUser);
 
 // Get user statistics
 router.get("/stats", getUserStats);

@@ -10,9 +10,20 @@ import {
   updateFlashcard,
   deleteFlashcard,
   getFlashcardsBySet,
+  getTeacherFlashcardSets,
+  countTeacherFlashcardSets,
+  getClassFlashcardSetCount,
 } from "../controllers/flashcard_class.controller.js";
 
 const router = express.Router();
+
+// Teacher dashboard - get all flashcard sets for classes the teacher is associated with
+router.get("/count/:teacherId", countTeacherFlashcardSets);
+
+// Get flashcard set count for a specific class
+router.get("/class/:classId/count", getClassFlashcardSetCount);
+
+router.get("/teacher/:teacherId", getTeacherFlashcardSets);
 
 // Flashcard set admin
 router.get("/", getAllFlashcardSetsForClass);

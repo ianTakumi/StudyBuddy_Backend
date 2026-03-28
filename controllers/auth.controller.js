@@ -2,13 +2,23 @@ import { supabase } from "../configs/supabase.js";
 
 export const register = async (req, res) => {
   try {
-    const { firstName, lastName, phone, email, password, role } = req.body;
+    const { firstName, lastName, phone, email, password, role, status } =
+      req.body;
     console.log("📝 Registration attempt:", { email, firstName, lastName });
 
     // Validate required fields
-    if (!email || !password || !firstName || !lastName) {
+    if (
+      !email ||
+      !password ||
+      !firstName ||
+      !lastName ||
+      !phone ||
+      !role ||
+      !status
+    ) {
       return res.status(400).json({
-        error: "Email, password, first name, and last name are required",
+        error:
+          "Email, password, first name, last name, phone, role, and status are required",
       });
     }
 
@@ -46,6 +56,7 @@ export const register = async (req, res) => {
           last_name: lastName,
           phone: phone || "",
           role: role || "student",
+          status: status || "active",
           created_at: new Date(),
         },
       ]);

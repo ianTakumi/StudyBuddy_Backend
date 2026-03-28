@@ -13,6 +13,6 @@ router.post("/submit", submitContact);
 
 // Protected routes - for admin only
 router.get("/", getContacts);
-router.patch("/:contactId/status", updateContactStatus);
+router.put("/:contactId/status", updateContactStatus);
 
 export default router;
