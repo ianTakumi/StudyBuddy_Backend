@@ -23,6 +23,75 @@ export const getUsers = async (req, res) => {
   }
 };
 
+export const activateTeacher = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // First, check if the user exists and is a teacher
+    const { data: user, error: userError } = await supabase
+      .from("users")
+      .select("*")
+      .eq("id", userId)
+      .single();
+
+    if (userError || !user) {
+      console.error("❌ User not found:", userError);
+      return res.status(404).json({
+        success: false,
+        error: "User not found",
+      });
+    }
+
+    // Check if user is a teacher
+    if (user.role !== "teacher") {
+      return res.status(400).json({
+        success: false,
+        error: "Only teacher accounts can be activated",
+      });
+    }
+
+    // Check if user is already active
+    if (user.status === "active") {
+      return res.status(400).json({
+        success: false,
+        error: "Teacher account is already active",
+      });
+    }
+
+    // Update user status to active
+    const { data: updatedUser, error: updateError } = await supabase
+      .from("users")
+      .update({
+        status: "active",
+        updated_at: new Date(),
+      })
+      .eq("id", userId)
+      .select()
+      .single();
+
+    if (updateError) {
+      console.error("❌ Error activating teacher:", updateError);
+      return res.status(400).json({
+        success: false,
+        error: "Failed to activate teacher account",
+      });
+    }
+
+    console.log("✅ Teacher activated successfully:", userId);
+    res.json({
+      success: true,
+      message: "Teacher account activated successfully",
+      user: updatedUser,
+    });
+  } catch (error) {
+    console.error("💥 Activate teacher error:", error);
+    res.status(500).json({
+      success: false,
+      error: "Internal server error during teacher activation",
+    });
+  }
+};
+
 export const updateProfile = async (req, res) => {
   try {
     const { first_name, last_name, email, phone } = req.body;

@@ -122,6 +122,7 @@ export const login = async (req, res) => {
         first_name: profile?.first_name,
         last_name: profile?.last_name,
         phone: profile?.phone,
+        status: profile?.status,
         created_at: profile?.created_at,
         updated_at: profile?.updated_at,
         role: profile?.role,

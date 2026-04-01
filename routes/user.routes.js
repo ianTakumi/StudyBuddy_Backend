@@ -6,6 +6,7 @@ import {
   getDashboard,
   getUsers,
   deleteUser,
+  activateTeacher,
 } from "../controllers/user.controller.js";
 // import { authenticateUser } from "../middleware/authMiddleware.js";
 
@@ -16,6 +17,9 @@ router.get("/", getUsers);
 
 // Update user profile
 router.put("/profile/:userId", updateProfile);
+
+// Activate teacher (change status from inactive to active)
+router.put("/:userId/activate", activateTeacher);
 
 // Delete user
 router.delete("/:userId", deleteUser);

@@ -29,9 +29,17 @@ const generateClassCode = async () => {
 
 export const getAllClasses = async (req, res) => {
   try {
+    // Fetch all classes with their student counts
     const { data: classes, error } = await supabase
       .from("classes")
-      .select("*")
+      .select(
+        `
+        *,
+        class_students (
+          count
+        )
+      `,
+      )
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -41,9 +49,15 @@ export const getAllClasses = async (req, res) => {
       });
     }
 
+    // Transform the data to include student_count
+    const classesWithCount = classes.map((classItem) => ({
+      ...classItem,
+      student_count: classItem.class_students?.[0]?.count || 0,
+    }));
+
     res.json({
       success: true,
-      data: classes,
+      data: classesWithCount,
     });
   } catch (err) {
     res.status(500).json({
